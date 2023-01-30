@@ -1,6 +1,6 @@
 class Motor:
 
-    MIN_PULSE = 1  # minimum pulse width in ms
+    MIN_PULSE = 0  # minimum pulse width in ms
     MAX_PULSE = 2
     ANGLE_CONST = 1  # measure the actual range of motion of the motor and get a number for total degrees spun / 180
 
