@@ -8,6 +8,14 @@ class Motor:
         board.set_pin_mode_servo(pin, self.MIN_PULSE, self.MAX_PULSE)
         self.board = board
         self.pin = pin
+        self.angle = 0
 
     def drive_to(self, angle):
-        self.board.servo_write(self.pin, int(angle / self.ANGLE_CONST))
+        if 0 < angle < 180:
+            self.board.servo_write(self.pin, int(angle / self.ANGLE_CONST))
+            self.angle = angle
+
+    def add_drive(self, amount):
+        if 0 < self.angle + amount < 180:
+            self.angle += amount
+        self.drive_to(self.angle)
