@@ -11,7 +11,7 @@ class Motor:
         self.angle = 0
 
     def drive_to(self, angle):
-        if 0 < angle < 180:
+        if 0 <= angle <= 180:
             self.board.servo_write(self.pin, int(angle / self.ANGLE_CONST))
             self.angle = angle
 
