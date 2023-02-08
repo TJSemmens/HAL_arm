@@ -24,6 +24,7 @@ RATE = 16000
 CHUNK = int(RATE/20)
 DURATION = 10
 
+
 def convert_samplerate(audio_path, desired_sample_rate):
     sox_cmd = 'sox {} --type raw --bits 16 --channels 1 --rate {} --encoding signed-integer --endian little --compression 0.0 --no-dither - '.format(quote(audio_path), desired_sample_rate)
     try:
@@ -80,7 +81,6 @@ def metadata_json_output(metadata):
         "words": words_from_candidate_transcript(transcript),
     } for transcript in metadata.transcripts]
     return json.dumps(json_result, indent=2)
-
 
 
 class VersionAction(argparse.Action):

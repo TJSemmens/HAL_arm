@@ -13,8 +13,7 @@ class CommandParser:
             self.motor = 'right'
         if 'both' in command:
             self.motor = 'both'
-        if 'degrees' in command:
-            try:
-                self.angle =w2n.word_to_num(command)
-            except ValueError:
-                pass
+        try:
+            self.angle =w2n.word_to_num(command)
+        except ValueError:
+            pass

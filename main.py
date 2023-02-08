@@ -2,7 +2,7 @@ import sys
 import time
 from pymata4 import pymata4 as arduino
 import XInput
-import Motor
+from Motor import Servo, Motor
 import pyaudio
 import numpy as np
 import deepspeech
@@ -10,6 +10,7 @@ import wavio
 import speech
 import command_parser as cmd
 
+SPEED = 2
 RATE = 16000
 CHUNK = int(RATE/20)
 DURATION = 6
@@ -18,13 +19,18 @@ HOT_WORDS = 'left right motor degrees drive both'
 if __name__ == "__main__":
     # set up the electrical
     board = arduino.Pymata4()
-    motor_l = Motor.Motor(13, board)
-    motor_r = Motor.Motor(12, board)
+    conveyor_l = Motor(13, board)
+    conveyor_r = Motor(12, board)
+    scissors = Servo(11, board)
+    wing_l = Servo(10, board)
+    wing_r = Servo(9, board)
+    roll = Servo(8, board)
+    wrist = Servo(7, board)
+    all_motors = [conveyor_l, conveyor_r, scissors, wing_l, wing_r, roll, wrist]
 
     # initialize the hardware
-    motor_l.drive_to(90)
-    motor_r.drive_to(90)
-
+    for motor in all_motors:
+        motor.zero()
 
     # set up speech to text AI
     ds = deepspeech.Model('SpeechModel/deepspeech-0.9.3-models.pbmm')
@@ -34,10 +40,10 @@ if __name__ == "__main__":
     stream = p.open(format=pyaudio.paInt16, channels=1, rate=RATE, input=True, frames_per_buffer=CHUNK)
 
     # Start an infinite loop for the control system
-    print('starting controller input')
-    start_time = time.time()
+    print('starting input')
     while 1:
         # Interpret Speech
+        '''
         audio = np.fromstring(stream.read(DURATION * RATE), dtype=np.int16)
         wavio.write("SpeechModel/wave.wav", audio, RATE, sampwidth=p.get_sample_size(format=pyaudio.paInt16))
         print('running deepspeech')
@@ -57,10 +63,35 @@ if __name__ == "__main__":
         else:
             pass
         '''
+
+        # get state of all buttons on controller
         state = XInput.get_state(0)
         triggers = XInput.get_trigger_values(state)
-        motor_l.add_drive((triggers[0] - triggers[1]) * 2)
-        motor_r.add_drive((triggers[1] - triggers[0]) * 2)
+        buttons = XInput.get_button_values(state)
+        sticks = XInput.get_thumb_values(state)
+
+        # set all motors based on controller values
+        conveyor_l.drive((triggers[0] - triggers[1]))
+        conveyor_r.drive((triggers[1] - triggers[0]))
+
+        if buttons['RIGHT_SHOULDER']:
+            scissors.increment(SPEED)
+        elif buttons['LEFT_SHOULDER']:
+            scissors.increment(-SPEED)
+
+        if buttons['DPAD_RIGHT']:
+            wing_r.increment(SPEED)
+            wing_l.increment(SPEED)
+        elif buttons['DPAD_LEFT']:
+            wing_r.increment(-SPEED)
+            wing_l.increment(-SPEED)
+
+        roll.increment(sticks[1][0] * SPEED)
+        wrist.increment(sticks[1][1] * SPEED)
+        
+        if buttons['A']:
+            for motor in all_motors:
+                motor.zero()
+
         time.sleep(0.005)
-        '''
     print('all done')
