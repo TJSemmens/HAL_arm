@@ -25,15 +25,31 @@ class Servo:
 
 
 class Motor:
-    MAX_ANALOG_OUT = 150
+    MAX_ANALOG_OUT = 255
 
-    def __init__(self, pin, board):
-        board.set_pin_mode_pwm_output(pin)
+    def __init__(self, pwm_pin, logic_pins, board):
+        board.set_pin_mode_pwm_output(pwm_pin)
+        board.set_pin_mode_digital_output(logic_pins[0])
+        board.set_pin_mode_digital_output(logic_pins[1])
         self.board = board
-        self.pin = pin
+        self.pwm_pin = pwm_pin
+        self.logic_pins = logic_pins
+        self.direction = 0
+        print(logic_pins)
 
     def drive(self, fraction_of_full_speed):
-        self.board.pwm_write(self.pin, int(abs(fraction_of_full_speed) * self.MAX_ANALOG_OUT))
+        if fraction_of_full_speed < 0 and self.direction == 0:
+            self.board.digital_write(self.logic_pins[0], 1)
+            self.board.digital_write(self.logic_pins[1], 0)
+            self.direction = 1
+        elif fraction_of_full_speed > 0 and self.direction == 1:
+            self.board.digital_write(self.logic_pins[0], 0)
+            self.board.digital_write(self.logic_pins[1], 1)
+            self.direction = 0
+        self.board.pwm_write(self.pwm_pin, int(abs(fraction_of_full_speed) * self.MAX_ANALOG_OUT))
 
     def zero(self):
-        self.board.pwm_write(self.pin, 0)
+        self.board.pwm_write(self.pwm_pin, 0)
+        self.board.digital_write(self.logic_pins[0], 0)
+        self.board.digital_write(self.logic_pins[1], 0)
+        self.direction = 0

@@ -19,8 +19,8 @@ HOT_WORDS = 'left right motor degrees drive both'
 if __name__ == "__main__":
     # set up the electrical
     board = arduino.Pymata4()
-    conveyor_l = Motor(13, board)
-    conveyor_r = Motor(12, board)
+    conveyor_l = Motor(13, [30, 31], board)
+    conveyor_r = Motor(12, [33, 34], board)
     scissors = Servo(11, board)
     wing_l = Servo(10, board)
     wing_r = Servo(9, board)
@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
         # set all motors based on controller values
         conveyor_l.drive((triggers[0] - triggers[1]))
-        conveyor_r.drive((triggers[1] - triggers[0]))
+        # conveyor_r.drive((triggers[1] - triggers[0]))
 
         if buttons['RIGHT_SHOULDER']:
             scissors.increment(SPEED)
