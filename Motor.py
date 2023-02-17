@@ -35,7 +35,6 @@ class Motor:
         self.pwm_pin = pwm_pin
         self.logic_pins = logic_pins
         self.direction = 0
-        print(logic_pins)
 
     def drive(self, fraction_of_full_speed):
         if fraction_of_full_speed < 0 and self.direction == 0:
@@ -53,3 +52,16 @@ class Motor:
         self.board.digital_write(self.logic_pins[0], 0)
         self.board.digital_write(self.logic_pins[1], 0)
         self.direction = 0
+
+
+class CServo:
+    def __init__(self, pin, board):
+        board.set_pin_mode_pwm_output(pin)
+        self.board = board
+        self.pin = pin
+
+    def drive(self, speed):
+        self.board.pwm_write(self.pin, int(speed))
+
+    def zero(self):
+        self.board.pwm_write(self.pin, 0)
