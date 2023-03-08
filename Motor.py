@@ -4,21 +4,28 @@ class Servo:
     MAX_PULSE = 2
     ANGLE_CONST = 1  # measure the actual range of motion of the motor and get a number for total degrees spun / 180
 
-    def __init__(self, pin, board):
+    def __init__(self, pin, board, speed, min_angle=0, max_angle=180):
         board.set_pin_mode_servo(pin, self.MIN_PULSE, self.MAX_PULSE)
         self.board = board
         self.pin = pin
         self.angle = 0
+        self.speed = speed
+        self.min_angle = min_angle
+        self.max_angle = max_angle
 
     def drive_to(self, angle):
-        if 0 <= angle <= 180:
+        if self.min_angle <= angle <= self.max_angle:
             self.board.servo_write(self.pin, int(angle / self.ANGLE_CONST))
             self.angle = angle
 
-    def increment(self, amount):
-        if 0 < self.angle + amount < 180:
-            self.angle += amount
+    def drive(self, control_input=1):
+        if self.min_angle < self.angle + self.speed * control_input < self.max_angle:
+            self.angle += self.speed * control_input
         self.drive_to(self.angle)
+
+    def drive_continuous(self, control_input):
+        self.drive_to(90 + 90 * control_input)
+
 
     def zero(self):
         self.drive_to(90)
@@ -55,13 +62,14 @@ class Motor:
 
 
 class CServo:
-    def __init__(self, pin, board):
+    def __init__(self, pin, board, speed):
         board.set_pin_mode_pwm_output(pin)
         self.board = board
         self.pin = pin
+        self.speed = speed
 
-    def drive(self, speed):
-        self.board.pwm_write(self.pin, int(speed))
+    def drive(self, control_input):
+        self.board.pwm_write(self.pin, int(control_input))
 
     def zero(self):
         self.board.pwm_write(self.pin, 0)

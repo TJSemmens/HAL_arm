@@ -3,22 +3,21 @@ from pymata4 import pymata4 as arduino
 import XInput
 from Motor import Servo, CServo
 
-SPEED = 2
-
 if __name__ == "__main__":
     # set up the electrical
     board = arduino.Pymata4()
-    conveyor_l = CServo(13, board)
-    conveyor_r = CServo(12, board)
-    scissors = Servo(11, board)
-    wing_l = Servo(10, board)
-    wing_r = Servo(9, board)
+    conveyor_l = Servo(13, board, 2)
+    conveyor_r = Servo(12, board, 2)
+    scissors = Servo(11, board, 1)
+    wing_l = Servo(10, board, 1)
+    wing_r = Servo(9, board, 1)
     all_motors = [conveyor_l, conveyor_r, scissors, wing_l, wing_r]
 
     # initialize the hardware
     for motor in all_motors:
         motor.zero()
 
+    same_direction = False  # for conveyor belts
     print('starting input')
     while 1:
         # get state of all buttons on controller
@@ -28,24 +27,30 @@ if __name__ == "__main__":
         sticks = XInput.get_thumb_values(state)
 
         # set all motors based on controller values
-        conveyor_l.drive((triggers[0] - triggers[1]))
-        conveyor_r.drive((triggers[1] - triggers[0]))
+        if not same_direction:
+            conveyor_l.drive_continuous(triggers[0] - triggers[1])
+            conveyor_r.drive_continuous(triggers[1] - triggers[0])
+        elif same_direction:
+            conveyor_l.drive_continuous(triggers[0] - triggers[1])
+            conveyor_r.drive_continuous(triggers[0] - triggers[1])
+
+        if buttons['X']:
+            same_direction = False
+        if buttons['Y']:
+            same_direction = True
 
         if buttons['RIGHT_SHOULDER']:
-            scissors.increment(SPEED)
+            scissors.drive()
         elif buttons['LEFT_SHOULDER']:
-            scissors.increment(-SPEED)
+            scissors.drive(-1)
 
-        if buttons['DPAD_RIGHT']:
-            wing_r.increment(-SPEED)
-            wing_l.increment(SPEED)
-        elif buttons['DPAD_LEFT']:
-            wing_r.increment(SPEED)
-            wing_l.increment(-SPEED)
+        wing_r.drive(sticks[1][0])
+        wing_l.drive(sticks[0][0])
 
         if buttons['A']:
             for motor in all_motors:
                 motor.zero()
 
-        time.sleep(0.001)
+
+        time.sleep(0.01)
     print('all done')
