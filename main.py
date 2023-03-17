@@ -18,13 +18,18 @@ if __name__ == "__main__":
     scissors = Servo(11, board, 1, min_angle=86, max_angle=136, zero_pos=saved_configs['11'])
     wing_l = Servo(10, board, 2, min_angle=64, max_angle=180, zero_pos=saved_configs['10'])
     wing_r = Servo(9, board, 2, min_angle=59, max_angle=180, zero_pos=saved_configs['9'])
-    all_motors = [conveyor_l, conveyor_r, scissors, wing_l, wing_r]
+    wrist_roll = Servo(8, board, 2)
+    wrist_pitch = Servo(7, board, 2)
+    arm_base = Servo(6, board, 2)
+    all_motors = [conveyor_l, conveyor_r, scissors, wing_l, wing_r, wrist_roll, wrist_pitch, arm_base]
+
 
     # initialize the hardware
     for motor in all_motors:
         motor.zero()
 
     same_direction = False  # for conveyor belts
+    arm_controls = True # for switching between wrist and arm controls
     print('starting input')
     while 1:
         # get state of all buttons on controller
@@ -51,8 +56,14 @@ if __name__ == "__main__":
         elif buttons['LEFT_SHOULDER']:
             scissors.drive(-1)
 
-        wing_r.drive(sticks[1][0])
-        wing_l.drive(sticks[0][0])
+        if not arm_controls:
+            wing_r.drive(sticks[1][0])
+            wing_l.drive(sticks[0][0])
+
+        if arm_controls:
+            wrist_roll.drive_continuous(sticks[1][0])
+            wrist_pitch.drive(sticks[1][1])
+            arm_base.drive_continuous(sticks[0][0])
 
         if buttons['A']:
             for motor in all_motors:
@@ -67,9 +78,15 @@ if __name__ == "__main__":
             json.dump(save_data, file)
             file.close()
 
-        if buttons['DPAD_DOWN']:
+        if buttons['DPAD_LEFT']:
             for motor in all_motors:
                 print(motor.angle)
+
+        if buttons['DPAD_DOWN']:
+            arm_controls = True
+
+        if buttons['DPAD_UP']:
+            arm_controls = False
 
 
         time.sleep(0.01)
