@@ -2,9 +2,13 @@ import time
 from pymata4 import pymata4 as arduino
 import XInput
 import json
-from Motor import Servo, CServo
+
+import Motor
+from Motor import Servo
 
 CONFIG_DATA = 'motor_configs'
+RECORDED_PATH = 'recorded_path'
+
 
 if __name__ == "__main__":
     # load config file
@@ -13,16 +17,17 @@ if __name__ == "__main__":
     file.close()
     # set up the electrical
     board = arduino.Pymata4()
-    conveyor_l = Servo(13, board, 2)
-    conveyor_r = Servo(12, board, 2)
-    scissors = Servo(11, board, 1, min_angle=86, max_angle=136, zero_pos=saved_configs['11'])
-    wing_l = Servo(10, board, 2, min_angle=64, max_angle=180, zero_pos=saved_configs['10'])
-    wing_r = Servo(9, board, 2, min_angle=59, max_angle=180, zero_pos=saved_configs['9'])
-    wrist_roll = Servo(8, board, 2)
-    wrist_pitch = Servo(7, board, 2)
-    arm_base = Servo(6, board, 2)
+    conveyor_l = Servo('conveyor_l', 13, board, 2)
+    conveyor_r = Servo('conveyor_r', 12, board, 2)
+    scissors = Servo('scissors', 11, board, 1, min_angle=86, max_angle=136, zero_pos=saved_configs['11'])
+    wing_l = Servo('wing_l', 10, board, 2, min_angle=64, max_angle=180, zero_pos=saved_configs['10'])
+    wing_r = Servo('wing_r', 9, board, 2, min_angle=59, max_angle=180, zero_pos=saved_configs['9'])
+    wrist_roll = Servo('wrist_roll', 8, board, 2)
+    wrist_pitch = Servo('wrist_pitch', 7, board, 2)
+    arm_base = Servo('arm_base', 6, board, 2)
     all_motors = [conveyor_l, conveyor_r, scissors, wing_l, wing_r, wrist_roll, wrist_pitch, arm_base]
-
+    motor_dict = {'conveyor_l': conveyor_l, 'conveyor_r': conveyor_r, 'scissors': scissors, 'wing_l': wing_l,
+                  'wing_r': wing_r, 'wrist_roll': wrist_roll, 'wrist_pitch': wrist_pitch, 'arm_base': arm_base}
 
     # initialize the hardware
     for motor in all_motors:
@@ -79,15 +84,39 @@ if __name__ == "__main__":
             file.close()
 
         if buttons['DPAD_LEFT']:
+            all_path_data = {'name': [], 'time': [], 'pos': []}
             for motor in all_motors:
-                print(motor.angle)
+                motor.record = False
+                index = 0
+                for name in motor.path['name']:
+                    all_path_data['name'].append(name)
+                    all_path_data['time'].append(path['time'][index])
+                    all_path_data['pos'].append(path['pos'][index])
+                    index += 1
+            file = open(RECORDED_PATH, 'w+')
+            json.dump(all_path_data, file)
+            file.close()
 
-        if buttons['DPAD_DOWN']:
+        if buttons['DPAD_RIGHT']:
+            for motor in all_motors:
+                motor.record = True
+
+        if buttons['DPAD_LEFT']:
+            print('USING RECORDED PATH')
+            file = open(RECORDED_PATH, 'r')
+            path = json.load(file)
+            instructions = Motor.parse_path(path)
+            remaining = len(instructions['time'])
+            step = 0
+            while step < remaining:
+                motor_dict[instructions['name'][step]].drive_to(instructions['pos'][step])
+                step += 1
+
+        if buttons['RIGHT_THUMB']:
             arm_controls = True
 
-        if buttons['DPAD_UP']:
+        if buttons['LEFT_THUMB']:
             arm_controls = False
 
-
         time.sleep(0.01)
-    print('all done')
+
