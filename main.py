@@ -101,7 +101,7 @@ if __name__ == "__main__":
             for motor in all_motors:
                 motor.record = True
 
-        if buttons['DPAD_LEFT']:
+        if buttons['DPAD_DOWN']:
             print('USING RECORDED PATH')
             file = open(RECORDED_PATH, 'r')
             path = json.load(file)
@@ -111,6 +111,7 @@ if __name__ == "__main__":
             while step < remaining:
                 motor_dict[instructions['name'][step]].drive_to(instructions['pos'][step])
                 step += 1
+                time.sleep(0.01)
 
         if buttons['RIGHT_THUMB']:
             arm_controls = True
