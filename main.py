@@ -2,7 +2,6 @@ import time
 from pymata4 import pymata4 as arduino
 import XInput
 import json
-
 import Motor
 from Motor import Servo
 
@@ -25,16 +24,18 @@ if __name__ == "__main__":
     wrist_roll = Servo('wrist_roll', 8, board, 2)
     wrist_pitch = Servo('wrist_pitch', 7, board, 2)
     arm_base = Servo('arm_base', 6, board, 2)
-    all_motors = [conveyor_l, conveyor_r, scissors, wing_l, wing_r, wrist_roll, wrist_pitch, arm_base]
+    arm_lever = Servo('arm_lever', 5, board, 2, pulse_param=[0, 3])
+    all_motors = [conveyor_l, conveyor_r, scissors, wing_l, wing_r, wrist_roll, wrist_pitch, arm_base, arm_lever]
     motor_dict = {'conveyor_l': conveyor_l, 'conveyor_r': conveyor_r, 'scissors': scissors, 'wing_l': wing_l,
-                  'wing_r': wing_r, 'wrist_roll': wrist_roll, 'wrist_pitch': wrist_pitch, 'arm_base': arm_base}
+                  'wing_r': wing_r, 'wrist_roll': wrist_roll, 'wrist_pitch': wrist_pitch, 'arm_base': arm_base,
+                  'arm_lever': arm_lever}
 
     # initialize the hardware
     for motor in all_motors:
         motor.zero()
 
     same_direction = False  # for conveyor belts
-    arm_controls = True # for switching between wrist and arm controls
+    arm_controls = True  # for switching between wrist and arm controls
     print('starting input')
     while 1:
         # get state of all buttons on controller
@@ -69,6 +70,7 @@ if __name__ == "__main__":
             wrist_roll.drive_continuous(sticks[1][0])
             wrist_pitch.drive(sticks[1][1])
             arm_base.drive_continuous(sticks[0][0])
+            arm_lever.drive(sticks[0][1])
 
         if buttons['A']:
             for motor in all_motors:
@@ -82,6 +84,7 @@ if __name__ == "__main__":
             file = open(CONFIG_DATA, 'w+')
             json.dump(save_data, file)
             file.close()
+            print('New Zero Positions Saved.')
 
         if buttons['DPAD_LEFT']:
             all_path_data = {'name': [], 'time': [], 'pos': []}
@@ -90,16 +93,18 @@ if __name__ == "__main__":
                 index = 0
                 for name in motor.path['name']:
                     all_path_data['name'].append(name)
-                    all_path_data['time'].append(path['time'][index])
-                    all_path_data['pos'].append(path['pos'][index])
+                    all_path_data['time'].append(motor.path['time'][index])
+                    all_path_data['pos'].append(motor.path['pos'][index])
                     index += 1
             file = open(RECORDED_PATH, 'w+')
             json.dump(all_path_data, file)
             file.close()
+            print('Data Recorded.')
 
         if buttons['DPAD_RIGHT']:
             for motor in all_motors:
                 motor.record = True
+                print('Beginning Recording.')
 
         if buttons['DPAD_DOWN']:
             print('USING RECORDED PATH')
@@ -112,6 +117,7 @@ if __name__ == "__main__":
                 motor_dict[instructions['name'][step]].drive_to(instructions['pos'][step])
                 step += 1
                 time.sleep(0.01)
+            print('Path Completed')
 
         if buttons['RIGHT_THUMB']:
             arm_controls = True
