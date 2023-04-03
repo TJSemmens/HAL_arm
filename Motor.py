@@ -5,10 +5,10 @@ import pandas as pd
 
 class Servo:
     ANGLE_CONST = 1  # measure the actual range of motion of the motor and get a number for total degrees spun / 180
-    ACC_CURVE = [0]
+    ACC_CURVE = [1]
     i = 1
     while i < 100:
-        ACC_CURVE.append(1/(1+math.exp(-0.08*(i-70))))
+        ACC_CURVE.append(1)#1/(1+math.exp(-0.08*(i-70))))
         i += 1
 
     def __init__(self, name, pin, board, speed, min_angle=0, max_angle=180, zero_pos=90, pulse_param=(0, 2)):
@@ -47,7 +47,7 @@ class Servo:
         self.drive_to(angle)
 
     def drive_continuous(self, control_input):
-        self.drive_to(90 + 90 * control_input)
+        self.drive_to(90 + 90 * control_input * self.speed)
 
     def zero(self):
         self.drive_to(self.zero_pos)
