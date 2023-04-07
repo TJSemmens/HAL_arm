@@ -34,10 +34,37 @@ if __name__ == "__main__":
     for motor in all_motors:
         motor.zero()
 
+    # set up speech to text AI
+    ds = deepspeech.Model('SpeechModel/deepspeech-0.9.3-models.pbmm')
+
+    # start listening
+    p = pyaudio.PyAudio()
+    stream = p.open(format=pyaudio.paInt16, channels=1, rate=RATE, input=True, frames_per_buffer=CHUNK)
+
+    # Start an infinite loop for the control system
     same_direction = False  # for conveyor belts
     arm_controls = True  # for switching between wrist and arm controls
     print('starting input')
     while 1:
+        # Interpret Speech
+        audio = np.fromstring(stream.read(DURATION * RATE), dtype=np.int16)
+        wavio.write("SpeechModel/wave.wav", audio, RATE, sampwidth=p.get_sample_size(format=pyaudio.paInt16))
+        print('running deepspeech')
+        command = speech.run('SpeechModel/deepspeech-0.9.3-models.pbmm', "SpeechModel/wave.wav", HOT_WORDS,
+                             'SpeechModel/deepspeech-0.9.3-models.scorer')
+        print(command)
+        instr = cmd.CommandParser()
+        instr.process_command(command)
+        print(instr.angle)
+        if instr.motor == 'left':
+            motor_l.drive_to(instr.angle)
+        elif instr.motor == 'right':
+            motor_r.drive_to(instr.angle)
+        elif instr.motor == 'both':
+            motor_r.drive_to(instr.angle)
+            motor_l.drive_to(instr.angle)
+        else:
+            pass
         # get state of all buttons on controller
         state = XInput.get_state(0)
         triggers = XInput.get_trigger_values(state)
